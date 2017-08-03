@@ -27,12 +27,12 @@ public class ProjectAnalysisPayloadBuilder {
     private static final String SLACK_GOOD_COLOUR = "good";
     private static final String SLACK_WARNING_COLOUR = "warning";
     private static final String SLACK_DANGER_COLOUR = "danger";
-    private static final Map<QualityGate.Status, String> statusToColor = new EnumMap<>(QualityGate.Status.class);
+    private static final Map<QualityGate.EvaluationStatus, String> statusToColor = new EnumMap<>(QualityGate.EvaluationStatus.class);
 
     static {
-        statusToColor.put(QualityGate.Status.OK, SLACK_GOOD_COLOUR);
-        statusToColor.put(QualityGate.Status.WARN, SLACK_WARNING_COLOUR);
-        statusToColor.put(QualityGate.Status.ERROR, SLACK_DANGER_COLOUR);
+        statusToColor.put(QualityGate.EvaluationStatus.OK, SLACK_GOOD_COLOUR);
+        statusToColor.put(QualityGate.EvaluationStatus.WARN, SLACK_WARNING_COLOUR);
+        statusToColor.put(QualityGate.EvaluationStatus.ERROR, SLACK_DANGER_COLOUR);
     }
 
     I18n i18n;
@@ -82,10 +82,11 @@ public class ProjectAnalysisPayloadBuilder {
         assertNotNull(analysis, "analysis");
 
         QualityGate qualityGate = analysis.getQualityGate();
+
         String shortText = String.join("",
                 "Project [", analysis.getProject().getName(), "] analyzed. See ",
                 projectUrl,
-                qualityGate == null ? "." : ". Quality gate status: " + qualityGate.getStatus());
+                qualityGate == null ? "." : ". Quality gate status: " + qualityStatusToSlackIcon(qualityGate.getStatus().toString()));
 
         return Payload.builder()
                 .channel(projectConfig.getSlackChannel())
@@ -104,15 +105,12 @@ public class ProjectAnalysisPayloadBuilder {
     private List<Attachment> buildConditionsAttachment(QualityGate qualityGate, boolean qgFailOnly) {
 
         List<Attachment> attachments = new ArrayList<>();
-        attachments.add(Attachment.builder()
-                .fields(
-                        qualityGate.getConditions()
-                                .stream()
-                                .filter(condition -> !qgFailOnly || notOkNorNoValue(condition))
-                                .map(this::translate)
-                                .collect(Collectors.toList()))
-                .color(statusToColor.get(qualityGate.getStatus()))
+        for(QualityGate.Condition condition : qualityGate.getConditions()) {
+            attachments.add(Attachment.builder()
+                .title(titleConverter(condition))
+                .color(statusToColor.get(condition.getStatus()))
                 .build());
+        }
         return attachments;
     }
 
@@ -215,5 +213,14 @@ public class ProjectAnalysisPayloadBuilder {
         return false;
     }
 
+    private String qualityStatusToSlackIcon(String status) {
+        return String.format(":sonarqube_%s:", status.toLowerCase());
+    }
 
+    private String titleConverter(QualityGate.Condition condition) {
+        String conditionMetric = condition.getMetricKey();
+        String i18nKey = "metric." + conditionMetric + ".name";
+        String title = i18n.message(Locale.ENGLISH, i18nKey, conditionMetric);
+        return String.format("%s:%s %s", title, condition.getValue(), qualityStatusToSlackIcon(condition.getStatus().toString()));
+    }
 }

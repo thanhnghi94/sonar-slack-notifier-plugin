@@ -63,34 +63,35 @@ public class ProjectAnalysisPayloadBuilderTest {
 
     private Payload expected() {
         List<Attachment> attachments = new ArrayList<>();
-        List<Field> fields = new ArrayList<>();
-        fields.add(Field.builder()
-                .title("New Vulnerabilities: OK")
-                .value("0, error if >0")
-                .valueShortEnough(false)
-                .build());
-        fields.add(Field.builder()
-                .title("New Bugs: ERROR")
-                .value("1, error if >0")
-                .valueShortEnough(false)
-                .build());
-        fields.add(Field.builder()
-                .title("Technical Debt Ratio on New Code: OK")
-                .value("0.01%, warning if >2.0%, error if >10.0%")
-                .valueShortEnough(false)
-                .build());
-        fields.add(Field.builder()
-                .title("Coverage on New Code: ERROR")
-                .value("75.51%, error if <80.0%")
-                .valueShortEnough(false)
-                .build());
 
         attachments.add(Attachment.builder()
-                .fields(fields)
-                .color("good")
-                .build());
+            .title("Security Rating on New Code: 1 :sonarqube_ok:")
+            .color("good")
+            .build());
+        attachments.add(Attachment.builder()
+            .title("Reliability Rating on New Code: 1 :sonarqube_ok:")
+            .color("good")
+            .build());
+        attachments.add(Attachment.builder()
+            .title("New Bugs: 0 :sonarqube_ok:")
+            .color("good")
+            .build());
+        attachments.add(Attachment.builder()
+            .title("New Code Smells: 4 :sonarqube_ok:")
+            .color("good")
+            .build());
+        attachments.add(Attachment.builder()
+            .title("Security Rating on New Code: 0 :sonarqube_ok:")
+            .color("good")
+            .build());
+        attachments.add(Attachment.builder()
+            .title("Technical Debt Ratop: 0.2 :sonarqube_ok:")
+            .color("good")
+            .build());
+
+
         return Payload.builder()
-                .text("Project [Project Name] analyzed. See http://localhist:9000/overview?id=project:key. Quality gate status: OK")
+                .text("Project [Project Name] analyzed. See http://localhist:9000/overview?id=project:key. Quality gate status: :sonarqube_ok:")
                 .channel("#channel")
                 .username("CKSSlackNotifier")
                 .attachments(attachments)
